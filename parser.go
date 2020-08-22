@@ -24,6 +24,7 @@ const (
 	Dow                                    // Day of week field, default *
 	DowOptional                            // Optional day of week field, default *
 	Descriptor                             // Allow descriptors such as @monthly, @weekly, etc.
+	Year
 )
 
 var places = []ParseOption{

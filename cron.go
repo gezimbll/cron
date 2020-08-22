@@ -41,6 +41,9 @@ type Schedule interface {
 	// Next returns the next activation time, later than the given time.
 	// Next is invoked initially, and then each time the job is run.
 	Next(time.Time) time.Time
+
+	// NextNotActive returns the next deactivation time, later than the given time.
+	NextNotActive(time.Time) time.Time
 }
 
 // EntryID identifies an entry within a Cron instance
