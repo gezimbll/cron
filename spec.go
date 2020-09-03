@@ -1,6 +1,8 @@
 package cron
 
-import "time"
+import (
+	"time"
+)
 
 // SpecSchedule specifies a duty cycle (to the second granularity), based on a
 // traditional crontab specification. It is computed initially and stored as bit sets.
@@ -9,6 +11,9 @@ type SpecSchedule struct {
 
 	// Override location for this schedule.
 	Location *time.Location
+
+	// Store the options so we know if second was populated or default to 0
+	options ParseOption
 }
 
 // bounds provides a range of acceptable values (plus a map of name to value).

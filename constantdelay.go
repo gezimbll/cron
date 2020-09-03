@@ -26,7 +26,7 @@ func (schedule ConstantDelaySchedule) Next(t time.Time) time.Time {
 	return t.Add(schedule.Delay - time.Duration(t.Nanosecond())*time.Nanosecond)
 }
 
-// NextNotActive is a placeholder implementing Schedule interface
-func (schedule ConstantDelaySchedule) NextNotActive(t time.Time) time.Time {
+// NextInactive is a placeholder implementing Schedule interface
+func (schedule ConstantDelaySchedule) NextInactive(t time.Time) time.Time {
 	return time.Time{}
 }

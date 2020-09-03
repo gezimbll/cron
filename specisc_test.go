@@ -5,21 +5,43 @@ import (
 	"time"
 )
 
-/*
-func TestNextNotActive(t *testing.T) {
+func TestNextInactive(t *testing.T) {
 	fromTime := time.Date(2020, 1, 1, 12, 00, 0, 0, time.UTC)
 	sched, err := ParseStandard("* * * 12 *")
 	if err != nil {
 		t.Error(err)
 	}
-	if tm := sched.NextNotActive(fromTime); tm != time.Date(2020, 12, 1, 12, 0, 1, 0, time.UTC) {
+	if tm := sched.NextInactive(fromTime); tm != time.Date(2020, 1, 1, 12, 0, 1, 0, time.UTC) {
 		t.Errorf("got time: %+v", tm)
 	}
-
+	fromTime = time.Date(2020, 11, 30, 23, 59, 59, 0, time.UTC)
+	if tm := sched.NextInactive(fromTime); tm != time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC) {
+		t.Errorf("got time: %+v", tm)
+	}
+	fromTime = time.Date(2020, 12, 12, 12, 12, 12, 0, time.UTC)
+	if tm := sched.NextInactive(fromTime); tm != time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC) {
+		t.Errorf("got time: %+v", tm)
+	}
+	if sched, err = ParseStandard("* * * * *"); err != nil {
+		t.Error(err)
+	}
+	eTm := time.Time{}
+	if tm := sched.NextInactive(fromTime); tm != eTm {
+		t.Errorf("got time: %+v", tm)
+	}
 }
-*/
 
+// BenchmarkCronNext-8           	  742411	      1596 ns/op
 func BenchmarkCronNext(b *testing.B) {
+	now := time.Now()
+	for n := 0; n < b.N; n++ {
+		sched, _ := ParseStandard("* * * 12 *")
+		sched.Next(now)
+	}
+}
+
+// BenchmarkCronNextInactive-8   	  692031	      1599 ns/op
+func BenchmarkCronNextInactive(b *testing.B) {
 	now := time.Now()
 	for n := 0; n < b.N; n++ {
 		sched, _ := ParseStandard("* * * 12 *")

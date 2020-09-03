@@ -150,6 +150,7 @@ func (p Parser) Parse(spec string) (Schedule, error) {
 		Month:    month,
 		Dow:      dayofweek,
 		Location: loc,
+		options:  p.options,
 	}, nil
 }
 
