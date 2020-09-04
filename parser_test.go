@@ -166,6 +166,7 @@ func TestParseSchedule(t *testing.T) {
 				Month:    all(months),
 				Dow:      all(dow),
 				Location: time.Local,
+				options:  secondParser.options,
 			},
 		},
 	}
@@ -359,15 +360,15 @@ func TestNoDescriptorParser(t *testing.T) {
 }
 
 func every5min(loc *time.Location) *SpecSchedule {
-	return &SpecSchedule{1 << 0, 1 << 5, all(hours), all(dom), all(months), all(dow), loc, standardParser.options}
+	return &SpecSchedule{1 << 0, 1 << 5, all(hours), all(dom), all(months), all(dow), loc, 0}
 }
 
 func every5min5s(loc *time.Location) *SpecSchedule {
-	return &SpecSchedule{1 << 5, 1 << 5, all(hours), all(dom), all(months), all(dow), loc, standardParser.options}
+	return &SpecSchedule{1 << 5, 1 << 5, all(hours), all(dom), all(months), all(dow), loc, 0}
 }
 
 func midnight(loc *time.Location) *SpecSchedule {
-	return &SpecSchedule{1, 1, 1, all(dom), all(months), all(dow), loc, standardParser.options}
+	return &SpecSchedule{1, 1, 1, all(dom), all(months), all(dow), loc, 0}
 }
 
 func annual(loc *time.Location) *SpecSchedule {
@@ -379,6 +380,6 @@ func annual(loc *time.Location) *SpecSchedule {
 		Month:    1 << months.min,
 		Dow:      all(dow),
 		Location: loc,
-		options:  standardParser.options,
+		options:  0,
 	}
 }
