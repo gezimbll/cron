@@ -45,6 +45,6 @@ func BenchmarkCronNextInactive(b *testing.B) {
 	now := time.Now()
 	for n := 0; n < b.N; n++ {
 		sched, _ := ParseStandard("* * * 12 *")
-		sched.Next(now)
+		sched.NextInactive(now)
 	}
 }
