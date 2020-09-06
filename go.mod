@@ -1,3 +1,3 @@
-module github.com/cgrates/cron/v3
+module github.com/cgrates/cron
 
 go 1.12
