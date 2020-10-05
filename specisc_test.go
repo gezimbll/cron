@@ -22,6 +22,21 @@ func TestNextInactive(t *testing.T) {
 	if tm := sched.NextInactive(fromTime); tm != time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC) {
 		t.Errorf("got time: %+v", tm)
 	}
+	fromTime = time.Date(2020, 12, 24, 12, 0, 0, 0, time.UTC)
+	if sched, err = ParseStandard("* * 24 12 *"); err != nil {
+		t.Error(err)
+	}
+	if tm := sched.NextInactive(fromTime); tm != time.Date(2020, 12, 25, 0, 0, 0, 0, time.UTC) {
+		t.Errorf("got time: %+v", tm)
+	}
+
+	fromTime = time.Date(2020, 1, 31, 23, 59, 59, 0, time.UTC)
+	if sched, err = ParseStandard("* * 1-30 1,3-12 *"); err != nil {
+		t.Error(err)
+	}
+	if tm := sched.NextInactive(fromTime); tm != time.Date(2020, 02, 1, 0, 0, 0, 0, time.UTC) {
+		t.Errorf("got time: %+v", tm)
+	}
 	if sched, err = ParseStandard("* * * * *"); err != nil {
 		t.Error(err)
 	}

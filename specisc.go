@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+func DaysInMonth(year int, month time.Month) float64 {
+	return float64(time.Date(year, month, 1, 0, 0, 0, 0, time.UTC).AddDate(0, 1, -1).Day())
+}
+
 // NextInactive returns the next time this schedule is deactivated, greater than the given
 // time.  If the schedule is always active in the next 5 years, return the zero time.
 func (s *SpecSchedule) NextInactive(t time.Time) time.Time {
@@ -31,7 +35,9 @@ func (s *SpecSchedule) NextInactive(t time.Time) time.Time {
 	if s.options&DowOptional == 0 {
 		isStarAll = isStarAll && s.Dow&starBit != 0
 	}
-
+	if isStarAll {
+		return time.Time{}
+	}
 	origLocation := t.Location()
 	loc := s.Location
 	if loc == time.Local {
@@ -43,32 +49,59 @@ func (s *SpecSchedule) NextInactive(t time.Time) time.Time {
 	// Start at the earliest possible time (the upcoming second).
 	t = t.Add(time.Second - time.Duration(t.Nanosecond()))
 
-	// This flag indicates whether a field has been incremented.
-	var added bool
+	// First no-match wins
 
-	// If no time is found within five years, return zero.
-	yearLimit := t.Year() + 5
-
-WRAP:
-	if t.Year() > yearLimit || isStarAll {
-		return time.Time{}
-	}
-	// Find the first non applicable month.
-	// If it's this month, then do nothing.
-	if s.Month&starBit == 0 {
-		for 1<<uint(t.Month())&s.Month != 0 {
-			// If we have to add a month, reset the other parts to 0.
-			if !added {
-				added = true
-				// Otherwise, set the date at the beginning (since the current time is irrelevant).
-				t = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, loc)
+	// Check seconds if they are activated in options
+	if s.options&SecondOptional > 0 &&
+		s.Second&starBit == 0 {
+		tChk := t
+		max := int(seconds.max)
+		for i := 0; i <= max; i++ {
+			if 1<<uint(tChk.Second())&s.Second == 0 { // found it
+				return tChk.In(origLocation)
 			}
-			t = t.AddDate(0, 1, 0)
-			// Wrapped around.
-			if t.Month() == time.January {
-				goto WRAP
+			if i == 0 {
+				tChk = tChk.Truncate(time.Second) // round to second
+			}
+			if i != max {
+				tChk = tChk.Add(1 * time.Second)
 			}
 		}
+	}
+
+	// Check minutes
+	if s.Minute&starBit == 0 {
+		tChk := t
+		max := int(minutes.max)
+		for i := 0; i <= max; i++ {
+			if 1<<uint(tChk.Minute())&s.Minute == 0 {
+				return tChk.In(origLocation)
+			}
+			if i == 0 {
+				tChk = tChk.Truncate(time.Minute) // round to minute
+			}
+			if i != max {
+				tChk = tChk.Add(1 * time.Minute)
+			}
+		}
+	}
+
+	// Check hours
+	if s.Hour&starBit == 0 {
+		tChk := t
+		max := int(hours.max)
+		for i := 0; i <= max; i++ {
+			if 1<<uint(tChk.Hour())&s.Hour == 0 {
+				return tChk.In(origLocation)
+			}
+			if i == 0 {
+				tChk = time.Date(tChk.Year(), tChk.Month(), tChk.Day(), tChk.Hour(), 0, 0, 0, loc) // Round to hour
+			}
+			if i != max {
+				tChk = tChk.Add(1 * time.Hour)
+			}
+		}
+
 	}
 
 	// Now get a day in that month.
@@ -77,70 +110,47 @@ WRAP:
 	// not exist.  For example: Sao Paulo has DST that transforms midnight on
 	// 11/3 into 1am. Handle that by noticing when the Hour ends up != 0.
 	if s.Dom&starBit == 0 || s.Dow&starBit == 0 {
-		for dayMatches(s, t) {
-			if !added {
-				added = true
-				t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
+		tChk := t
+		max := int(dom.max) // cover 31 days every second month
+		if DaysInMonth(tChk.Year(), tChk.Month()+1) == 30.0 {
+			max = max * 2
+		}
+		for i := 0; i <= max; i++ {
+			if !dayMatches(s, tChk) {
+				return tChk.In(origLocation)
 			}
-			t = t.AddDate(0, 0, 1)
-			// Notice if the hour is no longer midnight due to DST.
-			// Add an hour if it's 23, subtract an hour if it's 1.
-			if t.Hour() != 0 {
-				if t.Hour() > 12 {
-					t = t.Add(time.Duration(24-t.Hour()) * time.Hour)
+			if i == 0 {
+				tChk = time.Date(tChk.Year(), tChk.Month(), tChk.Day(), tChk.Hour(), 0, 0, 0, loc) // Round to hour
+				if tChk.Hour() > 12 {                                                              // Notice if the hour is no longer midnight due to DST.
+					// Add an hour if it's 23, subtract an hour if it's 1.
+					tChk = tChk.Add(time.Duration(24-tChk.Hour()) * time.Hour)
 				} else {
-					t = t.Add(time.Duration(-t.Hour()) * time.Hour)
+					tChk = tChk.Add(time.Duration(-tChk.Hour()) * time.Hour)
 				}
 			}
-
-			if t.Day() == 1 {
-				goto WRAP
+			if i != max {
+				tChk = tChk.AddDate(0, 0, 1)
 			}
 		}
 	}
 
-	if s.Hour&starBit == 0 {
-		for 1<<uint(t.Hour())&s.Hour != 0 {
-			if !added {
-				added = true
-				t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, loc)
+	// Find the first non applicable month.
+	if s.Month&starBit == 0 {
+		tChk := t
+		max := int(months.max)
+		for i := 0; i <= max; i++ {
+			if 1<<uint(tChk.Month())&s.Month == 0 {
+				return tChk.In(origLocation)
 			}
-			t = t.Add(1 * time.Hour)
-
-			if t.Hour() == 0 {
-				goto WRAP
+			if i == 0 {
+				tChk = time.Date(tChk.Year(), tChk.Month(), 1, 0, 0, 0, 0, loc)
 			}
-		}
-	}
-
-	if s.Minute&starBit == 0 {
-		for 1<<uint(t.Minute())&s.Minute != 0 {
-			if !added {
-				added = true
-				t = t.Truncate(time.Minute)
-			}
-			t = t.Add(1 * time.Minute)
-
-			if t.Minute() == 0 {
-				goto WRAP
+			if i != max {
+				tChk = tChk.AddDate(0, 1, 0)
 			}
 		}
+
 	}
 
-	if s.options&SecondOptional > 0 && // only check if seconds are activated
-		s.Second&starBit == 0 {
-		for 1<<uint(t.Second())&s.Second != 0 {
-			if !added {
-				added = true
-				t = t.Truncate(time.Second)
-			}
-			t = t.Add(1 * time.Second)
-
-			if t.Second() == 0 {
-				goto WRAP
-			}
-		}
-	}
-
-	return t.In(origLocation)
+	return time.Time{}
 }
