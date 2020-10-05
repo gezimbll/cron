@@ -112,13 +112,18 @@ func (s *SpecSchedule) NextInactive(t time.Time) time.Time {
 	if s.Dom&starBit == 0 || s.Dow&starBit == 0 {
 		tChk := t
 		max := int(dom.max) // cover 31 days every second month
-		if DaysInMonth(tChk.Year(), tChk.Month()+1) == 30.0 {
+		if DaysInMonth(tChk.Year(), tChk.Month()) != 31 {
 			max = max * 2
 		}
 		for i := 0; i <= max; i++ {
 			if !dayMatches(s, tChk) {
 				return tChk.In(origLocation)
 			}
+			if tChk.Day() == 1 && // month has priority over day as shortcut
+				s.Month&starBit == 0 && 1<<uint(tChk.Month())&s.Month == 0 {
+				return tChk.In(origLocation)
+			}
+
 			if i == 0 {
 				tChk = time.Date(tChk.Year(), tChk.Month(), tChk.Day(), tChk.Hour(), 0, 0, 0, loc) // Round to hour
 				if tChk.Hour() > 12 {                                                              // Notice if the hour is no longer midnight due to DST.
