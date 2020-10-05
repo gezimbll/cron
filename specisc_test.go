@@ -37,6 +37,13 @@ func TestNextInactive(t *testing.T) {
 	if tm := sched.NextInactive(fromTime); tm != time.Date(2020, 02, 1, 0, 0, 0, 0, time.UTC) {
 		t.Errorf("got time: %+v", tm)
 	}
+	fromTime = time.Date(2020, 2, 31, 23, 59, 59, 0, time.UTC)
+	if sched, err = ParseStandard("* * 1-30 * *"); err != nil {
+		t.Error(err)
+	}
+	if tm := sched.NextInactive(fromTime); tm != time.Date(2020, 03, 31, 0, 0, 0, 0, time.UTC) {
+		t.Errorf("got time: %+v", tm)
+	}
 	if sched, err = ParseStandard("* * * * *"); err != nil {
 		t.Error(err)
 	}
