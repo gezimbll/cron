@@ -71,12 +71,13 @@ func BenchmarkCronNextInactive(b *testing.B) {
 }
 
 func TestNextInactive2(t *testing.T) {
-	fromTime := time.Date(2020, 12, 24, 12, 59, 58, 0, time.UTC)
 	sched, err := ParseStandard("* * 24 12 *")
 	if err != nil {
 		t.Error(err)
 	}
-	exp := time.Date(2020, 12, 25, 0, 0, 0, 0, time.UTC)
+    exp := time.Date(2020, 12, 25, 0, 0, 0, 0, time.UTC)
+
+	fromTime := time.Date(2020, 12, 24, 12, 59, 58, 0, time.UTC)
 	if tm := sched.NextInactive(fromTime); tm != exp{
 		t.Errorf("Expected %+v, received %+v", exp, tm)
 	}
@@ -85,5 +86,12 @@ func TestNextInactive2(t *testing.T) {
 	if tm := sched.NextInactive(fromTime); tm != exp{
 		t.Errorf("Expected %+v, received %+v", exp, tm)
 	}
+
+	fromTime = time.Date(2020, 12, 24, 17, 0, 0, 0, time.UTC)
+	if tm := sched.NextInactive(fromTime); tm != exp{
+		t.Errorf("Expected %+v, received %+v", exp, tm)
+	}
 }
+
+
 
