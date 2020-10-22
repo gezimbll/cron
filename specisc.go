@@ -125,16 +125,18 @@ func (s *SpecSchedule) NextInactive(t time.Time) time.Time {
 			}
 
 			if i == 0 {
-				tChk = time.Date(tChk.Year(), tChk.Month(), tChk.Day(), tChk.Hour(), 0, 0, 0, loc) // Round to hour
-				if tChk.Hour() > 12 {                                                              // Notice if the hour is no longer midnight due to DST.
-					// Add an hour if it's 23, subtract an hour if it's 1.
-					tChk = tChk.Add(time.Duration(24-tChk.Hour()) * time.Hour)
-				} else {
-					tChk = tChk.Add(time.Duration(-tChk.Hour()) * time.Hour)
-				}
+				tChk = time.Date(tChk.Year(), tChk.Month(), tChk.Day(), 0, 0, 0, 0, loc) // Round to hour
 			}
 			if i != max {
 				tChk = tChk.AddDate(0, 0, 1)
+				if tChk.Hour() != 0 {
+					if tChk.Hour() > 12 {    // Notice if the hour is no longer midnight due to DST.
+						// Add an hour if it's 23, subtract an hour if it's 1.
+						tChk = tChk.Add(time.Duration(24-tChk.Hour()) * time.Hour)
+					} else {
+						tChk = tChk.Add(time.Duration(-tChk.Hour()) * time.Hour)
+					}
+				}
 			}
 		}
 	}
