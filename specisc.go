@@ -8,6 +8,20 @@ func DaysInMonth(year int, month time.Month) float64 {
 	return float64(time.Date(year, month, 1, 0, 0, 0, 0, time.UTC).AddDate(0, 1, -1).Day())
 }
 
+func (s *SpecSchedule) IsNextAnytime() (isNextAnytime bool) {
+	isNextAnytime = s.Month&starBit != 0 &&
+		s.Dom&starBit != 0 &&
+		s.Hour&starBit != 0 &&
+		s.Minute&starBit != 0
+	if s.options&SecondOptional > 0 {
+		isNextAnytime = isNextAnytime && s.Second&starBit != 0
+	}
+	if s.options&DowOptional == 0 {
+		isNextAnytime = isNextAnytime && s.Dow&starBit != 0
+	}
+	return
+}
+
 // NextInactive returns the next time this schedule is deactivated, greater than the given
 // time.  If the schedule is always active in the next 5 years, return the zero time.
 func (s *SpecSchedule) NextInactive(t time.Time) time.Time {
@@ -25,17 +39,7 @@ func (s *SpecSchedule) NextInactive(t time.Time) time.Time {
 	// Save the original timezone so we can convert back after we find a time.
 	// Note that schedules without a time zone specified (time.Local) are treated
 	// as local to the time provided.
-	isStarAll := s.Month&starBit != 0 &&
-		s.Dom&starBit != 0 &&
-		s.Hour&starBit != 0 &&
-		s.Minute&starBit != 0
-	if s.options&SecondOptional > 0 {
-		isStarAll = isStarAll && s.Second&starBit != 0
-	}
-	if s.options&DowOptional == 0 {
-		isStarAll = isStarAll && s.Dow&starBit != 0
-	}
-	if isStarAll {
+	if s.IsNextAnytime() {
 		return time.Time{}
 	}
 	origLocation := t.Location()
@@ -130,7 +134,7 @@ func (s *SpecSchedule) NextInactive(t time.Time) time.Time {
 			if i != max {
 				tChk = tChk.AddDate(0, 0, 1)
 				if tChk.Hour() != 0 {
-					if tChk.Hour() > 12 {    // Notice if the hour is no longer midnight due to DST.
+					if tChk.Hour() > 12 { // Notice if the hour is no longer midnight due to DST.
 						// Add an hour if it's 23, subtract an hour if it's 1.
 						tChk = tChk.Add(time.Duration(24-tChk.Hour()) * time.Hour)
 					} else {
