@@ -12,11 +12,8 @@ type ConstantDelaySchedule struct {
 // Delays of less than a second are not supported (will round up to 1 second).
 // Any fields less than a Second are truncated.
 func Every(duration time.Duration) ConstantDelaySchedule {
-	if duration < time.Second {
-		duration = time.Second
-	}
 	return ConstantDelaySchedule{
-		Delay: duration - time.Duration(duration.Nanoseconds())%time.Second,
+		Delay: duration,
 	}
 }
 
